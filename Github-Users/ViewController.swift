@@ -8,6 +8,7 @@
 import UIKit
 
 class ViewController: UIViewController {
+    var user: GithubUser?
     
     private func setupView() {
         view.backgroundColor = .white
@@ -24,12 +25,32 @@ class ViewController: UIViewController {
         setupView()
         setHierarchy()
         setupConstraints()
+        
+        Task {
+            do {
+                user = try await UserService.shared.getUser()
+                
+                guard let url = URL(string: user?.avatarUrl ?? "") else {
+                    throw GHError.invalidURL
+                }
+                
+                avatar.load(url: url)
+                username.text = user?.login
+                userDescription.text = user?.bio
+                
+            } catch {
+                print("error")
+            }
+        }
     }
 
     // - MARK: - UI Components
     private lazy var avatar: UIImageView = {
         let imageView = UIImageView()
-        
+        imageView.contentMode = .scaleAspectFit
+        imageView.clipsToBounds = true
+        imageView.layer.borderColor = UIColor.lightGray.cgColor
+        imageView.layer.borderWidth = 1
         imageView.layer.cornerRadius = 100
         imageView.backgroundColor = .lightGray
         imageView.translatesAutoresizingMaskIntoConstraints = false
@@ -40,7 +61,7 @@ class ViewController: UIViewController {
 
     private lazy var username: UILabel = {
         let label = UILabel()
-        label.text = "Username"
+        label.text = "username"
         label.font = .systemFont(ofSize: 20, weight: .bold)
         
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -49,7 +70,9 @@ class ViewController: UIViewController {
     
     private lazy var userDescription: UILabel = {
         let label = UILabel()
-        label.text = "The description contents in user profile"
+        label.text = "user bio"
+        label.numberOfLines = 3
+        label.textAlignment = .center
         label.font = .systemFont(ofSize: 16, weight: .regular)
         
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -70,6 +93,8 @@ class ViewController: UIViewController {
             
             userDescription.topAnchor.constraint(equalTo: username.bottomAnchor, constant: 20),
             userDescription.centerXAnchor.constraint(equalTo: view.centerXAnchor),
+            userDescription.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 20),
+            userDescription.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -20)
             
         ])
     }
